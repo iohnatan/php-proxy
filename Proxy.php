@@ -96,6 +96,10 @@ class Proxy
      */
     public static $HEADER_HTTP_PROXY_TARGET_URL = 'HTTP_PROXY_TARGET_URL';
 
+    public static $HEADER_HTTP_PROXY_SKIP_CF_HEADERS = 'HTTP_PROXY_SKIP_CF_HEADERS';
+
+    public static $HEADER_HTTP_PROXY_SKIP_REFERER = 'HTTP_PROXY_SKIP_REFERER';
+
     /**
      * Line break for debug purposes
      * @var string
@@ -107,13 +111,36 @@ class Proxy
      */
     protected static function getSkippedHeaders()
     {
-        return [
-            static::$HEADER_HTTP_PROXY_TARGET_URL,
-            static::$HEADER_HTTP_PROXY_AUTH,
-            static::$HEADER_HTTP_PROXY_DEBUG,
-            'HTTP_HOST',
-            'HTTP_ACCEPT_ENCODING'
-        ];
+        $skip_headers = [];
+
+        // https://developers.cloudflare.com/fundamentals/get-started/reference/http-request-headers/.
+        if ( ! empty( $_SERVER[static::$HEADER_HTTP_PROXY_SKIP_CF_HEADERS] ) ) {
+            $skip_headers = [
+                static::$HEADER_HTTP_PROXY_SKIP_CF_HEADERS,
+                'HTTP_CF_CONNECTING_IP',
+                'HTTP_X_FORWARDED_FOR',
+                'HTTP_CF_RAY',
+                'HTTP_CF_IPCOUNTRY',
+                'HTTP_CF_VISITOR',
+                'HTTP_CDN_LOOP',
+            ];
+        }
+
+        if ( ! empty( $_SERVER[static::$HEADER_HTTP_PROXY_SKIP_REFERER] ) ) {
+            $skip_headers[] = static::$HEADER_HTTP_PROXY_SKIP_REFERER;
+            $skip_headers[] = 'HTTP_REFERER';
+        }
+
+        return array_merge(
+            $skip_headers,
+            [
+                static::$HEADER_HTTP_PROXY_TARGET_URL,
+                static::$HEADER_HTTP_PROXY_AUTH,
+                static::$HEADER_HTTP_PROXY_DEBUG,
+                'HTTP_HOST',
+                'HTTP_ACCEPT_ENCODING'
+            ]
+        );
     }
 
     /**
